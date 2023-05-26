@@ -1,0 +1,28 @@
+@namespace CafeMaya.Components
+@using CafeMaya.Models
+@inject NavigationManager Navigation
+
+<div @onclick="@OpenCatalog" class="overflow-visible relative hover:-translate-y-1 transition snap-start">
+    <div class="bg-gray-400 rounded-xl scale-90 -translate-y-10 aspect-square overflow-visible inset-0 absolute"></div>
+    <div class="bg-gray-300 rounded-xl scale-95 -translate-y-6 aspect-square overflow-visible inset-0 absolute"></div>
+
+    <div class="flex flex-col rounded-xl overflow-hidden aspect-square -translate-y-1 hover:shadow-lg">
+        <div class="flex flex-row bg-white p-3 justify-between shadow-md">
+            <p class="text-indigo-600 font-bold text-lg">@Category.Name</p>
+            <p class="text-gray-400 text-base text-right">@Category.Items.Count</p>
+        </div>
+        <img src="@(Category.PictureUrl ?? "https://placehold.co/1000")" class="bg-slate-400 text-white text-lg font-bold flex-1 justify-center" alt="Picture 1000x1000"/>
+    </div>
+
+</div>
+
+@code
+{
+    private void OpenCatalog()
+    {
+        Navigation.NavigateTo($"menu?categoryid={Category.Id}");
+    }
+
+    [Parameter] public Category Category {get;set;} = new();
+    [Parameter] public string CategoryOld { get; set; } = "Category Sample";
+}

@@ -1,0 +1,25 @@
+{
+  "name": "cafemaya",
+  "version": "1.0.0",
+  "description": "POS System",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheWhispererFox/CafeMaya.git"
+  },
+  "keywords": [
+    "POS"
+  ],
+  "author": "TheWhisperer",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheWhispererFox/CafeMaya/issues"
+  },
+  "homepage": "https://github.com/TheWhispererFox/CafeMaya#readme",
+  "dependencies": {
+    "tailwindcss": "^3.3.2"
+  }
+}

@@ -1,0 +1,19 @@
+@namespace CafeMaya.Components
+
+@using CafeMaya.Models
+
+<div @onclick="@(async () => await OnClickCallback.InvokeAsync(Item))" class="flex flex-col rounded-xl overflow-hidden aspect-square hover:-translate-y-2 -translate-y-1 hover:shadow-lg transition">
+    <div class="flex flex-row bg-white p-3 justify-between shadow-md">
+        <p class="text-indigo-600 font-bold text-lg">@Item.Name</p>
+        <p class="text-gray-400 text-base text-right">@Item.Weight.ToString("0g")</p>
+    </div>
+    <img src="@(Item.PictureUrl ?? "https://placehold.co/1000")" alt="Picture 1000x1000" class="flex-1" />
+    <div class="absolute bg-indigo-600 font-bold text-white bottom-2 right-2 rounded-lg p-2">@Item.Price.ToString("C")</div>
+</div>
+
+@code
+{
+    [Parameter]
+    public Item Item { get; set; } = null!;
+    [Parameter] public EventCallback<Item> OnClickCallback { get; set; }
+}

@@ -1,0 +1,125 @@
+@page "/menu"
+@using CafeMaya.Components
+@using CafeMaya.Models
+@using CafeMaya.Services
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@inject IDbContextFactory<OrderDataProvider> OrderContextFactory
+
+<div class="flex lg:flex-row flex-col w-screen h-screen p-5 bg-slate-200">
+    <div class="grid lg:grid-cols-4 w-full md:grid-cols-2 scroll-smooth xs:grid-cols-2 items-center gap-8 scroll-mt-10 scroll-pt-10 overflow-y-scroll bg-transparent p-10">
+        @if (CategoryId != null && Categories!.Any())
+        {
+            @foreach (var item in Categories!.First(c => c.Id == CategoryId).Items)
+            {
+                <ItemCard OnClickCallback="@(
+                    itemCard => {
+                        if (CurrentOrder.Items!.All(i => i.Item.Name != itemCard.Name)) CurrentOrder.Items!.Add(new OrderItem(itemCard)); 
+                        else CurrentOrder.Items!.First(i => i.Item.Name == itemCard.Name).Quantity++; 
+                    })" Item="@item" />
+            }
+        }
+        @if (CategoryId == null && Categories!.Any())
+        {
+            @foreach (var category in Categories!)
+            {
+                <CategoryCard Category="@category" />
+            }
+        }
+    </div>
+    <EditForm OnValidSubmit="SaveOrder"  Model="@CurrentOrder" class="flex flex-col p-5 lg:w-1/3 w-full flex-initial justify-between rounded-lg bg-slate-300">
+        <FluentValidator />
+        <div>
+            <ValidationSummary class="text-red-800 mb-5 font-bold bg-red-300 border border-red-400 rounded-lg p-3" />
+            <div class="divide-y overflow-y-scroll">
+                @foreach (var item in CurrentOrder.Items!)
+                {
+                    <div class="flex flex-row border-dashed border-gray-500">
+                        <div class="flex flex-row w-full justify-between items-center">
+                            <div class="flex flex-col">
+                                <p class="font-bold font-lg text-gray-600 w-10">@item.Item.Name</p>
+                                <p class="text-gray-500 text-xs">@item.Item.Price.ToString("C")</p>
+                            </div>
+                            <div class="flex flex-row">
+                                <button @onclick="@(() => { item.Quantity--; if (item.Quantity == 0) CurrentOrder.Items.Remove(item);})" class="bg-slate-400 hover:bg-slate-500 active:bg-slate-700 rounded-l-lg font-bold font-lg w-5">-</button>
+                                <p class="font-bold bg-slate-500 text-slate-300 p-1">@("x" + item.Quantity)</p>
+                                <button @onclick="@(() => item.Quantity++)" class="bg-slate-400 hover:bg-slate-500 active:bg-slate-700 rounded-r-lg font-bold font-lg w-5">+</button>
+                            </div>
+                            <p class="text-gray-600 font-bold">@item.Subtotal.ToString("C")</p>
+                        </div>
+                        <button @onclick="@(() => CurrentOrder.Items.Remove(item))" class="p-1 bg-transparent rounded-lg font-bold font-lg w-10 text-gray-600">X</button>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="flex flex-col">
+            <hr class="border-gray-500"/>
+            <div class="flex flex-row justify-between p-5">
+                <div class="font-bold text-lg text-gray-800">Под итог</div>
+                <div class="font-bold text-lg text-gray-800">@CurrentOrder.Total.ToString("C")</div>
+            </div>
+            <div>
+                <div class="flex flex-row gap-5 justify-between p-5">
+                    <label for="delivery" class="font-bold text-lg text-gray-800">С доставкой?</label>
+                    <InputCheckbox id="delivery" class="scale-150 accent-indigo-500" @bind-Value="_isForDelivery" name="delivery"/>
+                </div>
+                @if (_isForDelivery)
+                {
+                    CurrentOrder.Delivery = new OrderDelivery(CurrentOrder, _deliveryAddress!);
+                    <div class="flex flex-row gap-5 justify-between p-5">
+                        <label for="deliveryAddress" class="text-lg font-bold text-gray-800 @(_isForDelivery ? string.Empty : "collapse")">Адрес доставки</label>
+                        <InputText id="deliveryAddress" class="@("rounded-lg p-1 text-lg" + (_isForDelivery ? string.Empty : "collapse"))" placeholder="ул. Улица, д. 21, кв. 50" @bind-Value="_deliveryAddress"/>
+                    </div>
+                }
+                @if (!_isForDelivery)
+                {
+                    CurrentOrder.Delivery = null;
+                }
+            </div>
+            <hr class="border-gray-500"/>
+            <div class="flex flex-row justify-between p-5">
+                <div class="font-bold text-lg text-gray-800">Итог</div>
+                <div class="font-bold text-lg text-gray-800">@CurrentOrder.Total.ToString("C")</div>
+            </div>
+            <button type="submit" class="rounded-lg bg-indigo-500 text-white font-bold text-lg p-5 hover:bg-indigo-800 active:bg-indigo-950">Оформить</button>
+        </div>
+    </EditForm>
+</div>
+
+@code
+{
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int? CategoryId { get; set; }
+
+    private bool _isForDelivery;
+    private string? _deliveryAddress;
+
+    private Order CurrentOrder { get; set; } = new() 
+            { Items = new List<OrderItem>() };
+
+    private List<Category>? Categories { get; set; } = new();
+    protected override async Task OnInitializedAsync()
+    {
+        await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
+        await orderProvider.Database.MigrateAsync();
+        Categories = await orderProvider.Categories.Include(c => c.Items).ToListAsync();
+        await base.OnInitializedAsync();
+    }
+
+    private async Task SaveOrder()
+    {
+        if (!CurrentOrder.Items?.Any() ?? false) return;
+        await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
+        CurrentOrder.Items!.ForEach(i => orderProvider.Attach(i.Item));
+        CurrentOrder.CreatedOn = DateTime.Now;
+        if (_isForDelivery)
+        {
+            CurrentOrder.Delivery = new OrderDelivery(CurrentOrder, _deliveryAddress!);
+        }
+        await orderProvider.AddAsync(CurrentOrder);
+        await orderProvider.SaveChangesAsync();
+        // TODO: Notify user that saving is successful
+        CurrentOrder = new Order() { Items = new List<OrderItem>() };
+    }
+}
