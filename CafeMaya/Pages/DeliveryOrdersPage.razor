@@ -1,0 +1,136 @@
+﻿@page "/deliveries"
+@using CafeMaya.Models;
+@using CafeMaya.Services
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<OrderDataProvider> OrderContextFactory
+
+@if (Orders.Any())
+{
+    <div class="flex lg:flex-row flex-col p-5 h-full w-full gap-5">
+        <table class="border-collapse rounded-lg overflow-hidden h-full w-full table-auto">
+            <thead class="bg-slate-300">
+            <tr>
+                <th class="p-3 text-xl">ID</th>
+                <th class="p-3 text-xl">Время</th>
+                <th class="p-3 text-xl">Адрес</th>
+                <th class="p-3 text-xl">Статус</th>
+                <th class="p-3 text-xl">Курьер</th>
+            </tr>
+            </thead>
+            <tbody class="divide-y">
+            @foreach (var order in Orders)
+            {
+                <tr class="text-center transition hover:bg-gray-100 @(order.Id == SelectedOrder?.Id ? "bg-gray-200" : string.Empty)" @onclick="@(() => SelectedOrder = order)">
+                    <td class="p-3 text-lg">@order.Id</td>
+                    <td class="p-3 text-lg">@order.CreatedOn.ToString("HH:mm")</td>
+                    <td class="p-3 text-lg">@order.Address</td>
+                    <td class="p-3 text-lg flex justify-center">
+                        <select disabled value="@order.Status" name="order_status" id="order_status" class="rounded-lg text-center border bg-transparent lg:w-1/2 w-full @(GetClassNameFromStatus(order.Status))">
+                            @foreach (var status in StatusesEnum)
+                            {
+                                <option value="@status.ToString()">@GetNameFromStatus(status)</option>
+                            }
+                        </select>
+                    </td>
+                    <td class="p-3 text-lg">
+                        <select @onchange="@(args => OnCourierChanged(order, args.Value))" value="@(order.Delivery?.Courier?.Id ?? 0)" name="order_courier" id="order_courier" class="rounded-lg text-center border bg-transparent lg:w-1/2 w-full">
+                            <option value="0">Нет курьера</option>
+                            @* Если у нас есть курьеры, то перечислить их здесь, иначе ничего не делать *@
+                            @if (Couriers.Any())
+                            {
+                                @foreach (var courier in Couriers)
+                                {
+                                    <option value="@courier.Id">@courier.FirstName @courier.LastName</option>
+                                }
+                            }
+                        </select>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        @if (SelectedOrder != null)
+        {
+            <div class="flex flex-col bg-slate-300 rounded-lg p-5 h-full lg:w-1/3 w-full">
+                <div class="flex flex-row justify-between text-2xl p-3 border-b border-dashed border-gray-500">
+                    <p class="font-bold">ID Заказа:</p>
+                    <p>@SelectedOrder.Id</p></div>
+                <div class="flex flex-row justify-between text-2xl p-3 border-b border-dashed border-gray-500">
+                    <p class="font-bold">Время заказа:</p>
+                    <p>@SelectedOrder.CreatedOn.ToString("HH:mm")</p></div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="flex justify-center h-screen w-screen text-center text-gray-800 text-9xl font-light bg-slate-300">
+        <div class="flex flex-col justify-center h-screen w-screen">
+            <p>Здесь пока нет заказов для доставки :(</p>
+        </div>
+    </div>
+}
+
+@code
+{
+    private List<Order> Orders { get; } = new();
+
+    private List<Courier> Couriers { get; } = new();
+
+    private Order? SelectedOrder { get; set; }
+
+    private List<Order.OrderStatus> StatusesEnum { get; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var orderContext = await OrderContextFactory.CreateDbContextAsync();
+        await orderContext.Database.MigrateAsync();
+        
+        Orders.AddRange(await orderContext.Orders
+            .Where(o => !string.IsNullOrWhiteSpace(o.Address))
+            .Select(o => new Order { Address = o.Address, Delivery = o.Delivery, CreatedOn = o.CreatedOn, Id = o.Id, Status = o.Status})
+            .ToListAsync());
+        
+        Couriers.AddRange(await orderContext.Couriers.ToListAsync());
+
+        StatusesEnum.AddRange(Enum.GetNames(typeof(Order.OrderStatus)).Select(s => (Order.OrderStatus)Enum.Parse(typeof(Order.OrderStatus), s)).ToList());
+        
+        await base.OnInitializedAsync();
+    }
+
+    private string GetClassNameFromStatus(Order.OrderStatus status) => status switch
+    {
+        Order.OrderStatus.Awaiting => Yellow,
+        Order.OrderStatus.Complete => Green,
+        Order.OrderStatus.Cooking => Orange,
+        Order.OrderStatus.AwaitingDelivery => Yellow,
+        Order.OrderStatus.Delivery => Orange,
+        Order.OrderStatus.Canceled => Red,
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+    };
+    
+    private string GetNameFromStatus(Order.OrderStatus status) => status switch
+    {
+        Order.OrderStatus.Awaiting => "Ожидание",
+        Order.OrderStatus.Complete => "Готово",
+        Order.OrderStatus.Cooking => "Приготавливается",
+        Order.OrderStatus.AwaitingDelivery => "Ожидает доставки",
+        Order.OrderStatus.Delivery => "Доставляется",
+        Order.OrderStatus.Canceled => "Отменено",
+        _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+        };
+
+    private async void OnCourierChanged(Order order, object? value)
+    {
+        int courierId = int.Parse((string?)value ?? "0");
+        await using var orderCtx = await OrderContextFactory.CreateDbContextAsync();
+        orderCtx.Attach(order);
+        await orderCtx.OrderDeliveries.AddAsync(new OrderDelivery(order.Id, courierId));
+        order.Status = courierId == 0 ? Order.OrderStatus.AwaitingDelivery : Order.OrderStatus.Delivery;
+        await orderCtx.SaveChangesAsync();
+    }
+    private const string Yellow = "text-yellow-500 border-yellow-500";
+    private const string Orange = "text-orange-500 border-orange-500";
+    private const string Red = "text-red-500 border-red-500";
+    private const string Green = "text-green-500 border-green-500";
+}
