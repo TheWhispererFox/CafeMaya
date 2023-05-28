@@ -1,0 +1,73 @@
+﻿@using System.Timers
+@namespace CafeMaya.Components
+
+<div class="lg:fixed static flex flex-col w-full lg:w-1/3 overflow-hidden left-4 bottom-4 bg-green-100 rounded-lg" style="@CurrentStyle">
+    <div class="flex flex-row justify-between p-2">
+        <div class="text-xl text-green-800">
+            @Header
+        </div>
+        <button @onclick="@OnCloseBtnClick">X</button>
+    </div>
+    <hr class="border-dashed"/>
+    <div class="text-lg p-3 text-green-800">
+        @Content
+    </div>
+    <div class="relative h-2 w-full rounded-b-lg">
+        <div class="absolute w-full h-full bg-green-400"></div>
+        <div class="absolute h-full bg-green-600" style="animation: progressBar @Duration.ToString("0s") ease 1s; animation-fill-mode: forwards;"></div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public string Header { get; set; } = "Header";
+
+    [Parameter]
+    public string Content { get; set; } = "Content";
+
+    [Parameter]
+    public int Duration { get; set; } = 3; // In seconds
+    
+    [Parameter]
+    public EventCallback OnCloseBtnClick { get; set; }
+
+    [Parameter]
+    public string CustomStyle { get; set; } = "animation: slideToast 1s ease; animation-fill-mode: both;";
+
+    private string CurrentStyle { get; set; } = "animation: slideToastUp 1s ease; animation-fill-mode: both;";
+    
+    private Timer _durationTimer = null!;
+    private Timer _transitionTimer = null!;
+
+    protected override void OnParametersSet()
+    {
+        _transitionTimer = new Timer(TimeSpan.FromSeconds(Duration));
+        _transitionTimer.Elapsed += (sender, args) =>
+        {
+            CurrentStyle = "animation: slideToastDown 1s ease; animation-fill-mode: both;";
+            InvokeAsync(StateHasChanged);
+        };
+        _transitionTimer.Enabled = true;
+
+        _durationTimer = new Timer( TimeSpan.FromSeconds(Duration + 4));
+        _durationTimer.Elapsed += (sender, args) =>
+        {
+            _durationTimer.Enabled = false;
+            
+            InvokeAsync(() =>
+            {
+                OnCloseBtnClick.InvokeAsync();
+                StateHasChanged();
+            });
+        };
+        _durationTimer.Enabled = true;
+        base.OnParametersSet();
+    }
+
+    ~ToastNotification()
+    {
+        _durationTimer.Dispose();
+    }
+
+}

@@ -30,3 +30,17 @@
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+    
+    @keyframes progressBar {
+        from {width: 0;}
+        to {width: 100%;}
+    }
+    @keyframes slideToastUp {
+        from {bottom: -10rem;}
+        to {bottom: 1rem;}
+    }
+
+    @keyframes slideToastDown {
+        from {bottom: 1rem;}
+        to {bottom: -10rem;}
+    }

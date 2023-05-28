@@ -6,7 +6,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject IDbContextFactory<OrderDataProvider> OrderContextFactory
 
-<div class="flex lg:flex-row flex-col w-screen h-screen p-5 bg-slate-200">
+<div class="flex lg:flex-row flex-col w-screen h-screen p-5 bg-slate-200 relative">
     <div class="grid lg:grid-cols-4 w-full md:grid-cols-2 scroll-smooth xs:grid-cols-2 items-center gap-8 scroll-mt-10 scroll-pt-10 overflow-y-scroll bg-transparent p-10">
         @if (CategoryId != null && Categories!.Any())
         {
@@ -84,6 +84,10 @@
             <button type="submit" class="rounded-lg bg-indigo-500 text-white font-bold text-lg p-5 hover:bg-indigo-800 active:bg-indigo-950">Оформить</button>
         </div>
     </EditForm>
+    @if (_isToastVisible)
+    {
+        <ToastNotification Header="Успех!" Duration="10" OnCloseBtnClick="@(() => _isToastVisible = false)" Content="Заказ успешно сохранен!" />
+    }
 </div>
 
 @code
@@ -99,6 +103,8 @@
             { Items = new List<OrderItem>() };
 
     private List<Category>? Categories { get; set; } = new();
+
+    private bool _isToastVisible;
     protected override async Task OnInitializedAsync()
     {
         await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
@@ -119,7 +125,7 @@
         }
         await orderProvider.AddAsync(CurrentOrder);
         await orderProvider.SaveChangesAsync();
-        // TODO: Notify user that saving is successful
+        _isToastVisible = true;
         CurrentOrder = new Order() { Items = new List<OrderItem>() };
     }
 }
