@@ -13,6 +13,7 @@
                 <th class="p-3 text-xl">ID</th>
                 <th class="p-3 text-xl">Время</th>
                 <th class="p-3 text-xl">Итог</th>
+                <th class="p-3 text-xl">Доставка</th>
                 <th class="p-3 text-xl">Статус</th>
             </tr>
             </thead>
@@ -23,6 +24,7 @@
                     <td class="p-3 text-lg">@order.Id</td>
                     <td class="p-3 text-lg">@order.CreatedOn.ToString("HH:mm")</td>
                     <td class="p-3 text-lg">@order.Total.ToString("C")</td>
+                    <td class="p-3 text-lg">@(string.IsNullOrWhiteSpace(order.Address) ? "Нет" : "Да")</td>
                     <td class="p-3 text-lg flex justify-center">
                         <select @onchange="@(args => OnOrderStatusChanged(args.Value, order))" value="@order.Status" name="order_status" id="order_status" class="rounded-lg text-center border bg-transparent lg:w-1/2 w-full @(GetClassNameFromStatus(order.Status))">
                             @foreach (Order.OrderStatus status in Enum.GetNames(typeof(Order.OrderStatus)).Select(s => Enum.Parse(typeof(Order.OrderStatus), s)))
