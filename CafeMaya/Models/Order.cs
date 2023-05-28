@@ -10,6 +10,7 @@ public class Order
     public OrderStatus Status { get; set; }
     public OrderDelivery? Delivery { get; set; }
     public string? Address { get; set; }
+    [NotMapped] public bool IsForDelivery { get; set; }
     public double Total => Items?.Sum(x => x.Quantity * x.Item.Price) ?? 0;
     
     public enum OrderStatus

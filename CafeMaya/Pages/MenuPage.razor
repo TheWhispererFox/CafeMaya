@@ -41,13 +41,13 @@
                                 <p class="text-gray-500 text-xs">@item.Item.Price.ToString("C")</p>
                             </div>
                             <div class="flex flex-row">
-                                <button @onclick="@(() => { item.Quantity--; if (item.Quantity == 0) CurrentOrder.Items.Remove(item);})" class="bg-slate-400 hover:bg-slate-500 active:bg-slate-700 rounded-l-lg font-bold font-lg w-5">-</button>
+                                <button type="button" @onclick="@(() => { item.Quantity--; if (item.Quantity == 0) CurrentOrder.Items.Remove(item);})" class="bg-slate-400 hover:bg-slate-500 active:bg-slate-700 rounded-l-lg font-bold font-lg w-5">-</button>
                                 <p class="font-bold bg-slate-500 text-slate-300 p-1">@("x" + item.Quantity)</p>
-                                <button @onclick="@(() => item.Quantity++)" class="bg-slate-400 hover:bg-slate-500 active:bg-slate-700 rounded-r-lg font-bold font-lg w-5">+</button>
+                                <button type="button" @onclick="@(() => item.Quantity++)" class="bg-slate-400 hover:bg-slate-500 active:bg-slate-700 rounded-r-lg font-bold font-lg w-5">+</button>
                             </div>
                             <p class="text-gray-600 font-bold">@item.Subtotal.ToString("C")</p>
                         </div>
-                        <button @onclick="@(() => CurrentOrder.Items.Remove(item))" class="p-1 bg-transparent rounded-lg font-bold font-lg w-10 text-gray-600">X</button>
+                        <button type="button" @onclick="@(() => CurrentOrder.Items.Remove(item))" class="p-1 bg-transparent rounded-lg font-bold font-lg w-10 text-gray-600">X</button>
                     </div>
                 }
             </div>
@@ -61,19 +61,18 @@
             <div>
                 <div class="flex flex-row gap-5 justify-between p-5">
                     <label for="delivery" class="font-bold text-lg text-gray-800">С доставкой?</label>
-                    <InputCheckbox id="delivery" class="scale-150 accent-indigo-500" @bind-Value="_isForDelivery" name="delivery"/>
+                    <InputCheckbox id="delivery" class="scale-150 accent-indigo-500" @bind-Value="CurrentOrder.IsForDelivery" name="delivery"/>
                 </div>
-                @if (_isForDelivery)
+                @if (CurrentOrder.IsForDelivery)
                 {
-                    CurrentOrder.Delivery = new OrderDelivery(CurrentOrder, _deliveryAddress!);
                     <div class="flex flex-row gap-5 justify-between p-5">
-                        <label for="deliveryAddress" class="text-lg font-bold text-gray-800 @(_isForDelivery ? string.Empty : "collapse")">Адрес доставки</label>
-                        <InputText id="deliveryAddress" class="@("rounded-lg p-1 text-lg" + (_isForDelivery ? string.Empty : "collapse"))" placeholder="ул. Улица, д. 21, кв. 50" @bind-Value="_deliveryAddress"/>
+                        <label for="deliveryAddress" class="text-lg font-bold text-gray-800 @(CurrentOrder.IsForDelivery ? string.Empty : "collapse")">Адрес доставки</label>
+                        <InputText id="deliveryAddress" class="@("rounded-lg p-1 text-lg" + (CurrentOrder.IsForDelivery ? string.Empty : "collapse"))" placeholder="ул. Улица, д. 21, кв. 50" @bind-Value="CurrentOrder.Address"/>
                     </div>
                 }
-                @if (!_isForDelivery)
+                else
                 {
-                    CurrentOrder.Delivery = null;
+                    CurrentOrder.Address = null;
                 }
             </div>
             <hr class="border-gray-500"/>
@@ -96,9 +95,6 @@
     [SupplyParameterFromQuery]
     public int? CategoryId { get; set; }
 
-    private bool _isForDelivery;
-    private string? _deliveryAddress;
-
     private Order CurrentOrder { get; set; } = new() 
             { Items = new List<OrderItem>() };
 
@@ -119,10 +115,6 @@
         await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
         CurrentOrder.Items!.ForEach(i => orderProvider.Attach(i.Item));
         CurrentOrder.CreatedOn = DateTime.Now;
-        if (_isForDelivery)
-        {
-            CurrentOrder.Delivery = new OrderDelivery(CurrentOrder, _deliveryAddress!);
-        }
         await orderProvider.AddAsync(CurrentOrder);
         await orderProvider.SaveChangesAsync();
         _isToastVisible = true;
