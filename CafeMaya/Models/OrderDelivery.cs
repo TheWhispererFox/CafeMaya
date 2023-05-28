@@ -1,20 +1,20 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace CafeMaya.Models;
 
+[PrimaryKey(nameof(OrderId), nameof(CourierId))]
 public class OrderDelivery
 {
-    [Key] public int OrderId { get; set; }
-    public Order Order { get; set; } = null!;
-    public string Address { get; set; }
+    public int OrderId { get; set; }
     public int CourierId { get; set; }
+    public Order Order { get; set; } = null!;
     public Courier? Courier { get; set; }
 
-    public OrderDelivery(int orderId, string address)
+    public OrderDelivery(int orderId, int courierId)
     {
         OrderId = orderId;
-        Address = address;
+        CourierId = courierId;
     }
 
-    public OrderDelivery(Order order, string address) : this(order.Id, address) { }
+    public OrderDelivery(Order order, Courier courier) : this(order.Id, courier.Id) { }
 }
