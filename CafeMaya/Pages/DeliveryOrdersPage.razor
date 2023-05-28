@@ -15,6 +15,7 @@
                 <th class="p-3 text-xl">Адрес</th>
                 <th class="p-3 text-xl">Статус</th>
                 <th class="p-3 text-xl">Курьер</th>
+                <th class="p-3 text-xl">Готово?</th>
             </tr>
             </thead>
             <tbody class="divide-y">
@@ -24,8 +25,8 @@
                     <td class="p-3 text-lg">@order.Id</td>
                     <td class="p-3 text-lg">@order.CreatedOn.ToString("HH:mm")</td>
                     <td class="p-3 text-lg">@order.Address</td>
-                    <td class="p-3 text-lg flex justify-center">
-                        <select disabled value="@order.Status" name="order_status" id="order_status" class="rounded-lg text-center border bg-transparent lg:w-1/2 w-full @(GetClassNameFromStatus(order.Status))">
+                    <td class="p-3 text-lg">
+                        <select disabled value="@order.Status" name="order_status" id="order_status" class="rounded-lg text-center border bg-transparent lg:w-2/3 w-full @(GetClassNameFromStatus(order.Status))">
                             @foreach (var status in StatusesEnum)
                             {
                                 <option value="@status.ToString()">@GetNameFromStatus(status)</option>
@@ -33,7 +34,7 @@
                         </select>
                     </td>
                     <td class="p-3 text-lg">
-                        <select @onchange="@(args => OnCourierChanged(order, args.Value))" value="@(order.Delivery?.Courier?.Id ?? 0)" name="order_courier" id="order_courier" class="rounded-lg text-center border bg-transparent lg:w-1/2 w-full">
+                        <select disabled="@(order.Status == Order.OrderStatus.Complete)" @onchange="@(args => OnCourierChanged(order, args.Value))" value="@(order.Delivery?.Courier?.Id ?? 0)" name="order_courier" id="order_courier" class="rounded-lg text-center border border-slate-600 bg-transparent lg:w-2/3 w-full">
                             <option value="0">Нет курьера</option>
                             @* Если у нас есть курьеры, то перечислить их здесь, иначе ничего не делать *@
                             @if (Couriers.Any())
@@ -45,6 +46,9 @@
                             }
                         </select>
                     </td>
+                    <td class="p-3 text-lg">
+                        <button @onclick="@(() => OnOrderDelivered(order))" disabled="@(order.Status == Order.OrderStatus.Complete || order.Delivery == null)" type="button" class="bg-green-700 hover:bg-green-800 active:bg-green-950 disabled:bg-green-950 disabled:cursor-not-allowed font-bold text-white rounded-md p-2">Доставлено</button>
+                    </td>
                 </tr>
             }
             </tbody>
@@ -54,10 +58,13 @@
             <div class="flex flex-col bg-slate-300 rounded-lg p-5 h-full lg:w-1/3 w-full">
                 <div class="flex flex-row justify-between text-2xl p-3 border-b border-dashed border-gray-500">
                     <p class="font-bold">ID Заказа:</p>
-                    <p>@SelectedOrder.Id</p></div>
+                    <p>@SelectedOrder.Id</p>
+                </div>
                 <div class="flex flex-row justify-between text-2xl p-3 border-b border-dashed border-gray-500">
                     <p class="font-bold">Время заказа:</p>
-                    <p>@SelectedOrder.CreatedOn.ToString("HH:mm")</p></div>
+                    <p>@SelectedOrder.CreatedOn.ToString("HH:mm")</p>
+                </div>
+                <button @onclick="@(() => OnOrderDelivered(SelectedOrder))" disabled="@(SelectedOrder.Status == Order.OrderStatus.Complete || SelectedOrder.Delivery == null)" type="button" class="bg-green-700 hover:bg-green-800 active:bg-green-950 disabled:bg-green-950 disabled:cursor-not-allowed font-bold text-white rounded-md p-2 m-5">Доставлено</button>
             </div>
         }
     </div>
@@ -120,13 +127,28 @@ else
         _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
         };
 
-    private async void OnCourierChanged(Order order, object? value)
+    private async Task OnCourierChanged(Order order, object? value)
     {
         int courierId = int.Parse((string?)value ?? "0");
         await using var orderCtx = await OrderContextFactory.CreateDbContextAsync();
         orderCtx.Attach(order);
-        await orderCtx.OrderDeliveries.AddAsync(new OrderDelivery(order.Id, courierId));
+        if (courierId == 0)
+        {
+            orderCtx.OrderDeliveries.Remove(order.Delivery!);
+        }
+        else
+        {
+            await orderCtx.OrderDeliveries.AddAsync(new OrderDelivery(order.Id, courierId));
+        }
         order.Status = courierId == 0 ? Order.OrderStatus.AwaitingDelivery : Order.OrderStatus.Delivery;
+        await orderCtx.SaveChangesAsync();
+    }
+
+    private async Task OnOrderDelivered(Order order)
+    {
+        await using var orderCtx = await OrderContextFactory.CreateDbContextAsync();
+        orderCtx.Attach(order);
+        order.Status = Order.OrderStatus.Complete;
         await orderCtx.SaveChangesAsync();
     }
     private const string Yellow = "text-yellow-500 border-yellow-500";
