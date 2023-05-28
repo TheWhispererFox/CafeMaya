@@ -1,13 +1,48 @@
 ﻿@page "/auth"
-
+@inject IConfiguration Configuration
+@inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
 <div class="flex items-center justify-center h-screen bg-gradient-to-tr from-blue-400 to-purple-950">
     <div class="flex flex-col md:gap-y-5 gap-y-10 bg-indigo-500 text-white rounded-lg shadow-lg p-10 h-screen w-screen md:w-auto md:h-auto">
         <h3 class="mb-10 text-center font-light tracking-wider text-5xl text-white">Привет!</h3>
-        <input class="rounded-md text-indigo-700 p-2" type="password" placeholder="Пароль..." />
-        <button class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-950 text-white rounded-md p-2" title="Auth">Начать работу</button>
+        <input class="rounded-md text-indigo-700 p-2" type="password" @bind="Password" placeholder="Пароль..." />
+        <button @onclick="@Auth" class="bg-indigo-700 hover:bg-indigo-800 active:bg-indigo-950 text-white rounded-md p-2" title="Auth">Начать работу</button>
     </div>
 </div>
 
 @code {
-    
+    private string Password { get; set; }
+
+    private string _cookPass;
+    private string _cashierPass;
+    private string _courierPass;
+
+    protected override void OnInitialized()
+    {
+        _cookPass = Configuration["Passwords:Cook"] ?? "Cook";
+        _cashierPass = Configuration["Passwords:Cashier"] ?? "Cashier";
+        _courierPass = Configuration["Passwords:Courier"] ?? "Courier";
+        
+        base.OnInitialized();
+    }
+
+    private void Auth()
+    {
+        if (Password == _cookPass)
+        {
+            Navigation.NavigateTo("orders");
+        }
+        else if (Password == _cashierPass)
+        {
+            Navigation.NavigateTo("menu");
+        }
+        else if (Password == _courierPass)
+        {
+            Navigation.NavigateTo("deliveries");
+        }
+        else
+        {
+            JsRuntime.InvokeVoidAsync("alert", "Неверный пароль, проверьте правильность написания");
+        }
+    }
 }
