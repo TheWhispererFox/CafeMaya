@@ -11,7 +11,6 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddDbContextFactory<OrderDataProvider>(opt =>
     opt.UseSqlServer("Server=localhost,1433;User=sa;Password=D@s-!ST-Me1n-KennW0rt!;Database=CafeMayaDb;TrustServerCertificate=True"));
-builder.Services.AddTransient<IValidator<OrderDelivery>, OrderDeliveryValidator>();
 builder.Services.AddTransient<IValidator<Order>, OrderValidator>();
 var app = builder.Build();
 
