@@ -4,6 +4,7 @@
 @using CafeMaya.Services
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.SignalR.Client
 @inject IDbContextFactory<OrderDataProvider> OrderContextFactory
 
 <div class="flex lg:flex-row flex-col w-screen h-screen p-5 bg-slate-200 relative">
@@ -87,6 +88,8 @@
 
 @code
 {
+    private HubConnection? _hubConnection;
+    
     [Parameter]
     [SupplyParameterFromQuery]
     public int? CategoryId { get; set; }
@@ -100,19 +103,41 @@
         await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
         await orderProvider.Database.MigrateAsync();
         Categories = await orderProvider.Categories.Include(c => c.Items).ToListAsync();
+
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/notificationhub"))
+            .Build();
+
+        await _hubConnection.StartAsync();
         await base.OnInitializedAsync();
     }
 
     private async Task SaveOrder()
     {
         if (!CurrentOrder.Items?.Any() ?? false) return;
-        ToastService.ShowSuccess("Заказ успешно сохранен!");
-        return;
         await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
         CurrentOrder.Items!.ForEach(i => orderProvider.Attach(i.Item));
         CurrentOrder.CreatedOn = DateTime.Now;
         await orderProvider.AddAsync(CurrentOrder);
         await orderProvider.SaveChangesAsync();
+        await NotifySuccessfulNewOrderAsync();
         CurrentOrder = new Order() { Items = new List<OrderItem>() };
+    }
+
+    private async Task NotifySuccessfulNewOrderAsync()
+    {
+        ToastService.ShowSuccess("Заказ успешно сохранен!");
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.SendAsync("SendNewOrderNotification", CurrentOrder.Id);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
     }
 }

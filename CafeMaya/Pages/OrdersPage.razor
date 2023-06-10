@@ -2,7 +2,12 @@
 @using CafeMaya.Models;
 @using CafeMaya.Services
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.SignalR.Client;
 @inject IDbContextFactory<OrderDataProvider> OrderContextFactory
+@inject NavigationManager Navigation
+@inject IToastService ToastService
+@inject IJSRuntime Js;
+@implements IAsyncDisposable
 
 @if (Orders.Any())
 {
@@ -78,8 +83,15 @@ else
     </div>
 }
 
+
 @code
 {
+    #region SignalR Hub stuff
+
+    private HubConnection? _hubConnection;
+
+    #endregion
+    
     List<Order> Orders {get;} = new();
     
     Order? SelectedOrder { get; set; }
@@ -91,6 +103,24 @@ else
         
         Orders.AddRange(orderContext.Orders.Include(o => o.Items)!.ThenInclude(oi => oi.Item).ToList());
         
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/notificationhub"))
+            .Build();
+
+        _hubConnection.On<int>("NewOrder", async newOrderId =>
+        {
+            Console.WriteLine("I am called!");
+            await using var newOrderCtx = await OrderContextFactory.CreateDbContextAsync();
+            var order = await newOrderCtx.Orders.FindAsync(newOrderId);
+            
+            if (order is null) return;
+            
+            Orders.Add(order);
+            ToastService.ShowInfo("Появились новые заказы!");
+            await Js.InvokeVoidAsync("PlayAudioFile", "/audio/Ding-dong-message-tone.mp3");
+            await InvokeAsync(StateHasChanged);
+        });
+        await _hubConnection.StartAsync();
         await base.OnInitializedAsync();
     }
 
@@ -129,4 +159,11 @@ else
     private const string Orange = "text-orange-500 border-orange-500";
     private const string Red = "text-red-500 border-red-500";
     private const string Green = "text-green-500 border-green-500";
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
 }
