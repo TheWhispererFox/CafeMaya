@@ -11,7 +11,7 @@
             <thead class="bg-slate-300">
             <tr>
                 <th class="p-3 text-xl">ID</th>
-                <th class="p-3 text-xl">Время</th>
+                <th class="p-3 text-xl">Дата</th>
                 <th class="p-3 text-xl">Адрес</th>
                 <th class="p-3 text-xl">Статус</th>
                 <th class="p-3 text-xl">Курьер</th>
@@ -23,7 +23,7 @@
             {
                 <tr class="text-center transition hover:bg-gray-100 @(order.Id == SelectedOrder?.Id ? "bg-gray-200" : string.Empty)" @onclick="@(() => SelectedOrder = order)">
                     <td class="p-3 text-lg">@order.Id</td>
-                    <td class="p-3 text-lg">@order.CreatedOn.ToString("HH:mm")</td>
+                    <td class="p-3 text-lg">@order.CreatedOn.ToString("dd.MM.yyyy HH:mm")</td>
                     <td class="p-3 text-lg">@order.Address</td>
                     <td class="p-3 text-lg">
                         <select disabled value="@order.Status" name="order_status" id="order_status" class="rounded-lg text-center border bg-transparent lg:w-2/3 w-full @(GetClassNameFromStatus(order.Status))">
