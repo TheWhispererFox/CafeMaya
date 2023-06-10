@@ -1,5 +1,9 @@
 ﻿@using CafeMaya.Services
 @using CafeMaya.Models
+@using Blazored.Toast.Configuration
 @inherits LayoutComponentBase
 
-<main> @Body </main>
+<main>
+    @Body
+    <BlazoredToasts Timeout="5" Position="ToastPosition.BottomCenter" ShowProgressBar="true" ShowCloseButton="true" PauseProgressOnHover="true"/>
+</main>
