@@ -11,7 +11,7 @@
             <thead class="bg-slate-300">
             <tr>
                 <th class="p-3 text-xl">ID</th>
-                <th class="p-3 text-xl">Время</th>
+                <th class="p-3 text-xl">Дата</th>
                 <th class="p-3 text-xl">Итог</th>
                 <th class="p-3 text-xl">Доставка</th>
                 <th class="p-3 text-xl">Статус</th>
@@ -22,7 +22,7 @@
             {
                 <tr class="text-center transition hover:bg-gray-100 @(order.Id == SelectedOrder?.Id ? "bg-gray-200" : string.Empty)" @onclick="@(() => SelectedOrder = order)">
                     <td class="p-3 text-lg">@order.Id</td>
-                    <td class="p-3 text-lg">@order.CreatedOn.ToString("HH:mm")</td>
+                    <td class="p-3 text-lg">@order.CreatedOn.ToString("dd.MM.yyyy HH:mm")</td>
                     <td class="p-3 text-lg">@order.Total.ToString("C")</td>
                     <td class="p-3 text-lg">@(string.IsNullOrWhiteSpace(order.Address) ? "Нет" : "Да")</td>
                     <td class="p-3 text-lg flex justify-center">
