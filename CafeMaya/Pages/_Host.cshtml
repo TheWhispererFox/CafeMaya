@@ -15,17 +15,36 @@
 <body>
     <component type="typeof(App)" render-mode="ServerPrerendered" />
 
-    <div id="blazor-error-ui">
-        <environment include="Staging,Production">
-            An error has occurred. This application may no longer respond until reloaded.
-        </environment>
-        <environment include="Development">
-            An unhandled exception has occurred. See browser dev tools for details.
-        </environment>
-        <a href="" class="reload">Reload</a>
-        <a class="dismiss">🗙</a>
-    </div>
+<div id="blazor-error-ui">
+    <environment include="Staging,Production">
+        An error has occurred. This application may no longer respond until reloaded.
+    </environment>
+    <environment include="Development">
+        An unhandled exception has occurred. See browser dev tools for details.
+    </environment>
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
 
-    <script src="_framework/blazor.server.js"></script>
+<audio id="notificationSound">
+    <source id="notificationSoundSrc" src="" />
+</audio>
+<script type="application/javascript">
+window.PlayAudioFile = (src) => {
+    let audio = document.getElementById('notificationSound');
+    if (audio != null)
+        {
+            let audioSrc = document.getElementById('notificationSoundSrc');
+            if (audioSrc != null)
+            {
+                audioSrc.src = src;
+                audio.load();
+                audio.play();
+            }
+        }
+    }
+</script>
+
+<script src="_framework/blazor.server.js"></script>
 </body>
 </html>
