@@ -83,10 +83,6 @@
             <button type="submit" class="rounded-lg bg-indigo-500 text-white font-bold text-lg p-5 hover:bg-indigo-800 active:bg-indigo-950">Оформить</button>
         </div>
     </EditForm>
-    @if (_isToastVisible)
-    {
-        <ToastNotification Header="Успех!" Duration="10" OnCloseBtnClick="@(() => _isToastVisible = false)" Content="Заказ успешно сохранен!" />
-    }
 </div>
 
 @code
@@ -99,8 +95,6 @@
             { Items = new List<OrderItem>() };
 
     private List<Category>? Categories { get; set; } = new();
-
-    private bool _isToastVisible;
     protected override async Task OnInitializedAsync()
     {
         await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
@@ -112,12 +106,13 @@
     private async Task SaveOrder()
     {
         if (!CurrentOrder.Items?.Any() ?? false) return;
+        ToastService.ShowSuccess("Заказ успешно сохранен!");
+        return;
         await using var orderProvider = await OrderContextFactory.CreateDbContextAsync();
         CurrentOrder.Items!.ForEach(i => orderProvider.Attach(i.Item));
         CurrentOrder.CreatedOn = DateTime.Now;
         await orderProvider.AddAsync(CurrentOrder);
         await orderProvider.SaveChangesAsync();
-        _isToastVisible = true;
         CurrentOrder = new Order() { Items = new List<OrderItem>() };
     }
 }
