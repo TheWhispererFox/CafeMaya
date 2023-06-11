@@ -8,6 +8,7 @@
 @inject IDbContextFactory<OrderDataProvider> OrderContextFactory
 @inject IToastService ToastService
 @inject NavigationManager Navigation
+@inject IJSRuntime Js
 @implements IAsyncDisposable
 
 <div class="flex lg:flex-row flex-col w-screen h-screen p-5 bg-slate-200 relative">
@@ -73,10 +74,15 @@
                         <label for="deliveryAddress" class="text-lg font-bold text-gray-800 @(CurrentOrder.IsForDelivery ? string.Empty : "collapse")">Адрес доставки</label>
                         <InputText id="deliveryAddress" class="@("rounded-lg p-1 text-lg" + (CurrentOrder.IsForDelivery ? string.Empty : "collapse"))" placeholder="ул. Улица, д. 21, кв. 50" @bind-Value="CurrentOrder.Address"/>
                     </div>
+                    <div class="flex flex-row gap-5 justify-between p-5">
+                        <label for="clientPhone" class="text-lg font-bold text-gray-800 @(CurrentOrder.IsForDelivery ? string.Empty : "collapse")">Адрес доставки</label>
+                        <InputText id="clientPhone" class="@("rounded-lg p-1 text-lg" + (CurrentOrder.IsForDelivery ? string.Empty : "collapse"))" placeholder="+7(900)987-70-14" @bind-Value="CurrentOrder.ClientPhone"/>
+                    </div>
                 }
                 else
                 {
                     CurrentOrder.Address = null;
+                    CurrentOrder.ClientPhone = null;
                 }
             </div>
             <hr class="border-gray-500"/>
@@ -113,6 +119,12 @@
 
         await _hubConnection.StartAsync();
         await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await Js.InvokeVoidAsync("masks");
+            await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task SaveOrder()

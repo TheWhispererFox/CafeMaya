@@ -44,6 +44,16 @@ window.PlayAudioFile = (src) => {
         }
     }
 </script>
+<script src="https://unpkg.com/imask"></script>
+<script  type="application/javascript">
+window.masks = () => {
+    let el = document.getElementById('clientPhone');
+    if (el != null)
+    { 
+        let phoneMask = IMask(el, { mask: '+{7}(000)000-00-00', placeholderChar: '#' });
+    }
+    };
+</script>
 
 <script src="_framework/blazor.server.js"></script>
 </body>
