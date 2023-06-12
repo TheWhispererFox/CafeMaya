@@ -15,6 +15,7 @@
                 <th class="p-3 text-xl">Адрес</th>
                 <th class="p-3 text-xl">Статус</th>
                 <th class="p-3 text-xl">Курьер</th>
+                <th class="p-3 text-xl">Телефон</th>
                 <th class="p-3 text-xl">Готово?</th>
             </tr>
             </thead>
@@ -45,6 +46,9 @@
                                 }
                             }
                         </select>
+                    </td>
+                    <td class="p-3 text-lg">
+                        @order.ClientPhone
                     </td>
                     <td class="p-3 text-lg">
                         <button @onclick="@(() => OnOrderDelivered(order))" disabled="@(order.Status == Order.OrderStatus.Complete || order.Delivery == null)" type="button" class="bg-green-700 hover:bg-green-800 active:bg-green-950 disabled:bg-green-950 disabled:cursor-not-allowed font-bold text-white rounded-md p-2">Доставлено</button>
@@ -95,7 +99,7 @@ else
         
         Orders.AddRange(await orderContext.Orders
             .Where(o => !string.IsNullOrWhiteSpace(o.Address))
-            .Select(o => new Order { Address = o.Address, Delivery = o.Delivery, CreatedOn = o.CreatedOn, Id = o.Id, Status = o.Status})
+            .Select(o => new Order { Address = o.Address, Delivery = o.Delivery, CreatedOn = o.CreatedOn, Id = o.Id, ClientPhone = o.ClientPhone, Status = o.Status})
             .ToListAsync());
         
         Couriers.AddRange(await orderContext.Couriers.ToListAsync());
